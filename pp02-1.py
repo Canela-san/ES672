@@ -10,6 +10,7 @@ def main():
     'fluxo_compressor': 14.16,
     'relação_pressões_compressão': 10.7,
     'PCI_do_gás_natural': 50.01 * 1000000,
+    'T_ambiente': 15
     }
     
     params_ajuste = {
@@ -18,7 +19,7 @@ def main():
         'eta_comp': 0.828,
         'eta_turb': 0.857,
         'rendimento': 0.975,
-        'perda_exaustao': 30,
+        'perda_exaustao': 30
     }
 
     # Nome amigável para os eixos
@@ -36,7 +37,7 @@ def main():
     n_points = 10
     x_vals = 0
     y_vals = [[0] * n_points]* len(params_ajuste.keys())
-    temp = np.array([])
+    temp = [np.array([])] * 6
 
     for j,param in enumerate(params_ajuste):
         x_vals = np.linspace(
@@ -50,25 +51,54 @@ def main():
             p[param] = val
             y_vals[j][i] = pp02A(**propriedades_fixas, **p)
 
-    for i in range(0,n_points):
-        temp = np.append(temp, y_vals[0][i][0])
-
-
     x_percent = np.linspace((variation*(-100)), (variation*(100)), n_points)
     
-    plt.plot(x_percent, y_vals, marker='o')
-    plt.xlabel('Porcentagem (%)')
-    plt.ylabel('Valor')
-    plt.title('Vetor vs. Porcentagem')
+    for j in range(0,6):
+        for i in range(0,n_points):
+            temp[j] = np.append(temp[j], y_vals[j][i][0])
+        plt.plot(x_percent, temp[j], marker='o')    
+    
+    # plt.plot(x_percent, temp , marker='o')
+    # plt.plot(x_percent, temp , marker='o')
+
+
+    plt.xlabel('perda_carga_ar_combustão (%)')
+    plt.ylabel('Potência Elétrica Líquida')
+    plt.title('Potencia x perda_carga_ar_combustão')
     plt.grid(True)
     plt.show()
 
 
-    # resposta = pp02A(**propriedades_fixas, **params_ajuste)
+    # # resposta = pp02A(**propriedades_fixas, **params_ajuste)
 
 
-    # printSI(Fabricante,resposta)
+    # # printSI(Fabricante,resposta)
+ 
+ 
+ 
+ 
+ 
+ 
+    # n_points = 10
+    # y_vals = [0] * n_points
+    # x_vals = np.linspace(
+    #     0,
+    #     40,
+    #     n_points
+    # )
 
+    # for i, val in enumerate(x_vals):
+    #     p = propriedades_fixas.copy()
+    #     p['T_ambiente'] = val
+    #     y_vals[i] = pp02A(**p, **params_ajuste)
+
+    # y_vals = [list(linha) for linha in zip(*y_vals)]
+    # plt.plot(x_vals, y_vals[2], marker='o')
+    # plt.xlabel('Temperatura Ambiente (ºC)')
+    # plt.ylabel('Temperatura dos Gases')
+    # plt.title('Temperatura dos Gases x Temperatura')
+    # plt.grid(True)
+    # plt.show()
 
 
 def pp02A(
@@ -81,10 +111,11 @@ def pp02A(
         perda_exaustao,
         eta_comp,
         eta_turb,
-        rendimento
+        rendimento,
+        T_ambiente
         ):
 
-    t1 = 15 + 273.15
+    t1 = T_ambiente + 273.15
     p1 = Patm
 
     # compressor
