@@ -1,6 +1,6 @@
 import CoolProp.CoolProp as CP
 from scipy.constants import zero_Celsius
-def pp02A(
+def Modelo_Turbina_ASE50(
         Patm,
         fluxo_compressor,
         relação_pressões_compressão,
@@ -19,7 +19,6 @@ def pp02A(
 
     # compressor
 
-    pressão_compressor = p1 * relação_pressões_compressão
     h1 = CP.PropsSI('H', 'T', t1, 'P', p1, 'Air')
     s1 = CP.PropsSI('S', 'T', t1, 'P', p1, 'Air')
 
@@ -27,12 +26,11 @@ def pp02A(
     p2 = p1 * relação_pressões_compressão
     h2s = CP.PropsSI('H', 'S', s2, 'P', p2, 'Air')
     h2 = ((h2s - h1) / eta_comp) + h1
-    # t2 = CP.PropsSI('T', 'P', p2, 'H', h2, 'Air')    #Não é usado
     potencia_compressor = fluxo_compressor * (h2 - h1)
 
     #camara de combustão
 
-    p3 = (1-(perda_carga_ar_combustão/100))*pressão_compressor
+    p3 = (1-(perda_carga_ar_combustão/100))*p2
     h3 = CP.PropsSI('H', 'P', p3, 'T', T_max, 'Air')
     Fluxo_massico_combustão=(fluxo_compressor*(h3-h2))/(PCI_do_gás_natural-(h3-h2))
     s3 = CP.PropsSI('S', 'P', p3, 'H', h3, 'Air')
