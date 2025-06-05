@@ -6,9 +6,9 @@ from Dados_Iniciais import *
 
 
 def main():
-    variation = 0.4 # Variação de +- 40%
+    variation = 0.1 # Variação de +- 40%
     n_points = 50
-    indice = 2 # define o que será calculado: Potencia, Eficiencia termica ou Temperatua do gás de saída
+    indice = 0 # define o que será calculado: Potencia, Eficiencia termica ou Temperatua do gás de saída
     print(propriedades_fixas)
     
     plotar_gráfico(propriedades_fixas, params_ajuste, param_names_v, indice, legenda[indice], variation, n_points)

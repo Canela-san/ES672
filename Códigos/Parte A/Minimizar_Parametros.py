@@ -41,6 +41,8 @@ def main():
     print (params_otimizados)
     print("\nResposta do modelo:")
     print(resposta_final)
+    
+    print(f"Aqui a diferença: {(resposta_final - vetor_alvo)*100/vetor_alvo}")
 
     print("\nErro final:")
     print(resultado.fun)

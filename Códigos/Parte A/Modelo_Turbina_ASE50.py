@@ -50,5 +50,6 @@ def Modelo_Turbina_ASE50(
     return [
         Potência_Líquida/1000,
         eficiência_Termica*100,
-        t4-zero_Celsius
+        t4-zero_Celsius,
+        Fluxo_massico_combustão
     ]
