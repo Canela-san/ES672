@@ -120,10 +120,6 @@ def main():
     else:
         print('A otimização falhou. Mensagem:')
         print(resultado.message)
-    
-# ----- Outputs -----
-
-main()
 
 
             
