@@ -1,111 +1,129 @@
-import CoolProp.CoolProp as cp
-from scipy.optimize import _minimize
-
-# ----- Valores -----
-# Empuxo em cruzeiro
-# Consumo de combustivel
-# Consumo de combustivel em cruzeiro
+import numpy as np
+from scipy.optimize import minimize
 
 # ----- Parâmetros Datasheet -----
 
 m_ar_to_pw = 81.65 # kg/s
 pressure_ratio_pw = 12.5 
 thrust_to_pw = 53.5 # kN
-thrust_cruise_pw = 15.8 # kN
+thrust_cruise_pw = 15800 # N
 spec_fuel_to_pw = 22.2 # (g/s)/kN
 spec_fuel_cruise_pw = 25.7 # (g/s)kN
+fuel_cruise_pw = 0.406 # kg/s
 t_max_pw = 1063.15 # K
 
 # ----- Definições -----
 
 t_amb, p_amb, m_ar_iso, v_ar_iso = 230, 31200, 81.65, 0.816
 
-def v(t_amb, p_amb):   # Validado
+params_ajuste = {
+    'perda_carga_comb': 0.025,
+    't_max': 1063.15,
+    'eff_isoent_comp': 0.87,
+    'eff_isoent_turb': 0.87,
+    'eff_isoent_diff_boc': 1 
+}
+
+bounds = [
+    (0.02375, 0.2625),        # perda_carga_comb, variação de 5%
+    (1009.9925, 1116,3075),   # t_max, variação de 5%
+    (0.8265, 0.9135),         # eff_isoent_comp, variação de 5%
+    (0.8265, 0.9135),         # eff_isoent_turb, variação de 5%
+    (0.95, 1)                 # eff_isoent_diff_boc, variação de 5%
+]
+
+inputs_iniciais = list(params_ajuste.values())
+
+def v(t_amb, p_amb):   
     return 287 * t_amb / p_amb
 
 def v_exaustao(h4, h5):
     return (2 * (h4 - h5)) ** 0.5
 
-def m_ar_in(m_ar_ISO, v_ar_ISO, v):   # Validado
+def m_ar_in(m_ar_ISO, v_ar_ISO, v):   
     return m_ar_ISO * v_ar_ISO / v
 
-def m_comb(m_ar_in, h3, h2, pci):   # validado (mais ou menos)
+def m_comb(m_ar_in, h3, h2, pci):   
     return (m_ar_in * (h3 - h2))/(pci - h3)
 
 def spec_m_comb(m_comb, f_empuxo):
     return (m_comb * 1000)/(f_empuxo/1000)
 
 def f_empuxo(m_ar_in, m_comb, v_exaustao, v_in):
-    return ((m_ar_in + m_comb) * v_exaustao) - (m_ar_in * v_in) # V_in = 260 m/s em cruzeiro
+    return ((m_ar_in + m_comb) * v_exaustao) - (m_ar_in * v_in) 
 
-def calcula_erro_empuxo(press_ratio, eff_isoent_comp, perda_carga_comb, t_max, eff_isoent_turb):
-
-    t1, p1 = 263.7, 50390
-    h1 = cp.PropsSI('H', 'T', t1, 'P', p1, 'Air')
-
-    print(f'H1 = {h1}')
-    print('--------------')
-
-    s2s = cp.PropsSI('S', 'T', t1, 'P', p1, 'Air')   # s2s = s1
-    p2s = press_ratio * p1                           
-    h2s = cp.PropsSI('H', 'S', s2s, 'P', p2s, 'Air')
-
-    print(f'S2S = {s2s}, P2S = {p2s}, H2S = {h2s}')
-    print('--------------')
-
-    h2 = (h1 + (h2s - h1))/eff_isoent_comp
-    p2 = p2s
-
-    print(f'H2 = {h2}, P2 = {p2}')
-    print('--------------')
-
-    p3 = p2 * (1 - perda_carga_comb)
-    t3 = t_max
-    h3 = cp.PropsSI('H', 'P', p3, 'T', t3, 'Air')
-    s3 = cp.PropsSI('S', 'P', p3, 'T', t3, 'Air')
-
-    print(f'p3 = {p3}, t3 = {t3}, h3 = {h3}, s3 = {s3}')
-    print('--------------')
-
-    s4s = s3
-    p4s = p1
-    h4s = cp.PropsSI('H', 'S', s4s, 'P', p4s, 'Air')
-
-    print(f's4s = {s3}, p4s = {p4s}, h4s = {h4s}')
-    print('--------------')
-
-    h4 = h3-(eff_isoent_turb*(h3-h4s))
-    p4 = p4s
-    s4 = cp.PropsSI('S', 'H', h4, 'P', p4, 'Air')
-
-    print(f'h4 = {h4}, p4 = {p4}, s4 = {s4}')
-
-    p5 = p_amb
-    s5 = s4   # Partindo do pressuposto de que o bocal é isoentrópico (outra forma de fazer?)
-    h5 = cp.PropsSI('H', 'P', p5, 'S', s5, 'Air')
-
-    print(f'p5 = {p5}, s5 = {s5}, h5 = {h5}')
-    print('--------------')
+def calcula_erros_individuais(inputs):
 
     v_cruise = v(t_amb, p_amb)
     m_ar_in_cruise = m_ar_in(m_ar_iso, v_ar_iso, v_cruise)
+
+    h1 = 263820 # J/kg
+    h2s = 543750 # J /kg
+    h2 = h1 + (h2s - h1)/inputs[2] # J/kg
+    h3 = (1.150*inputs[1] - 104.05)*1000 # J/kg
+
     m_comb_cruise = m_comb(m_ar_in_cruise, h3, h2, 42800000) 
-    v_exaustao_cruise = v_exaustao(h4, h5)                # Bug --> numero complexo
 
-    print(f'v_cruise = {v_cruise}')
-    print(f'm_ar_in_cruise = {m_ar_in_cruise}')
-    print(f'm_comb = {m_comb_cruise}')
-    print(f'v_exaustao_cruise = {v_exaustao_cruise}')
-    print('--------------')
+    h4s = h3 - ((m_ar_in_cruise*(h2 - h1))/((m_ar_in_cruise + m_comb_cruise)*inputs[3]))
+    h4 = h3 - inputs[3]*(h3 - h4s)
+    h5s = 518600
+    h5 = h4 - inputs[4]*(h4-h5s)
 
-    return f_empuxo(m_ar_in_cruise, m_comb_cruise, v_exaustao_cruise, 260) 
+    v_exaustao_cruise = v_exaustao(h4, h5)               
+    empuxo = f_empuxo(m_ar_in_cruise, m_comb_cruise, v_exaustao_cruise, 260) 
+    m_comb_cruise_spec = (m_comb_cruise*1000)/(empuxo/1000)
 
+    erros = [
+        (empuxo - thrust_cruise_pw)/thrust_cruise_pw, 
+        (m_comb_cruise - fuel_cruise_pw)/fuel_cruise_pw, 
+        (m_comb_cruise_spec - spec_fuel_cruise_pw)/spec_fuel_cruise_pw
+    ]
+
+    return erros
+
+def calcula_erro_combinado(inputs):
+
+    v_cruise = v(t_amb, p_amb)
+    m_ar_in_cruise = m_ar_in(m_ar_iso, v_ar_iso, v_cruise)
+
+    h1 = 263820 # J/kg
+    h2s = 543750 # J /kg
+    h2 = h1 + (h2s - h1)/inputs[2] # J/kg
+    h3 = (1.150*inputs[1] - 104.05)*1000 # J/kg
+
+    m_comb_cruise = m_comb(m_ar_in_cruise, h3, h2, 42800000) 
+
+    h4s = h3 - ((m_ar_in_cruise*(h2 - h1))/((m_ar_in_cruise + m_comb_cruise)*inputs[3]))
+    h4 = h3 - inputs[3]*(h3 - h4s)
+    h5s = 518600
+    h5 = h4 - inputs[4]*(h4-h5s)
+
+    v_exaustao_cruise = v_exaustao(h4, h5)               
+    empuxo = f_empuxo(m_ar_in_cruise, m_comb_cruise, v_exaustao_cruise, 260) 
+    m_comb_cruise_spec = (m_comb_cruise*1000)/(empuxo/1000)
+
+    erro = ((empuxo - thrust_cruise_pw)**2 + (m_comb_cruise - fuel_cruise_pw)**2 + (m_comb_cruise_spec - spec_fuel_cruise_pw)**2)**0.5
+
+    return erro
+
+def main():
+
+    resultado = minimize(calcula_erro_combinado, inputs_iniciais, bounds=bounds)
+    
+    if resultado.success:
+        parametros_otimos = resultado.x
+        erros = calcula_erros_individuais(parametros_otimos)
+
+        print(f'Erro empuxo = {erros[0]}')
+        print(f'Erro consumo de comb. = {erros[1]}')
+        print(f'Erro consumo esp. de comb. = {erros[2]}')
+    else:
+        print('A otimização falhou. Mensagem:')
+        print(resultado.message)
+    
 # ----- Outputs -----
 
-emp = calcula_erro_empuxo(12.5, 0.87, 0.025, t_max_pw, 0.87)
-print(emp)
-
-# Determinei o estado 3. Agora preciso descobrir como determinar o 4. Já tenho s4s.
+main()
 
 
             
