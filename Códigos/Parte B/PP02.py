@@ -26,7 +26,7 @@ params_ajuste = {
 
 bounds = [
     (0.02375, 0.2625),        # perda_carga_comb, variação de 5%
-    (1009.9925, 1116,3075),   # t_max, variação de 5%
+    (1009.9925, 1116.3075),   # t_max, variação de 5%
     (0.8265, 0.9135),         # eff_isoent_comp, variação de 5%
     (0.8265, 0.9135),         # eff_isoent_turb, variação de 5%
     (0.95, 1)                 # eff_isoent_diff_boc, variação de 5%
