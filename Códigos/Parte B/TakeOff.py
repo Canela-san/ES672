@@ -29,7 +29,7 @@ def calcula_to(inputs):
     h_amb = cp.PropsSI('H', 'T', t_amb, 'P', p_amb, 'Air')   
 
     h1 = h_amb + ((62**2)/2)   
-    p1 = 1.61 * p_amb
+    p1 = (0.8846/0.5477)*p_amb
     s1 = cp.PropsSI('S', 'H', h1, 'P', p1, 'Air')
 
     s2s = s1
