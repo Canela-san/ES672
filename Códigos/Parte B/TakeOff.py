@@ -7,9 +7,6 @@ inputs = [0.025, 1068.23, 0.866, 0.87, 0.987]
 
 def calcula_to(inputs):
 
-    v_cruise = v(t_amb, p_amb)
-    m_ar_in_cruise = m_ar_in(m_ar_iso, v_ar_iso, v_cruise)
-
     h_amb = cp.PropsSI('H', 'T', t_amb, 'P', p_amb, 'Air')   
 
     h1 = h_amb + ((260**2)/2)   
