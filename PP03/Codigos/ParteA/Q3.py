@@ -9,7 +9,7 @@ T_in_C = 30  # °C
 P_out = 800  # kPa
 
 # Constantes e valores da análise anterior
-n = 1.174  # Expoente politrópico do 1º estágio da compressão estagiada
+n = 1.1736  # Expoente politrópico do 1º estágio da compressão estagiada
 R_ar = 0.287  # kJ/kg·K, constante do ar
 T_in_K = T_in_C + 273.15 # Temperatura de entrada em Kelvin
 
